@@ -240,7 +240,6 @@ Rendering corresponding with above graph sample data:
 ## Author
 
 Robobluez@gmail.com
-docu-artwork
 
 ## License
 
