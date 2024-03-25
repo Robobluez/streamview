@@ -77,9 +77,7 @@ Streamview will automatically generate dual y-scales ( left side and right side 
 
 Streamview provides the ability to display data values as text. This means you can view the exact value, such as 'battery dc: 12.7V', instead of having a  visual representation.
 
-Video showing the capabilities of the viewer:
 
-[![Watch the video](https://img.youtube.com/vi/nTQUwghvy5Q/default.jpg)](https://youtu.be/nTQUwghvy5Q)
 
 ### demo_full.py
 
