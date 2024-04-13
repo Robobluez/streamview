@@ -51,6 +51,8 @@ class VideoSet(object):
     # handle new incoming video image
     ############################################################################
     def update(self, name, img, wipemain): # handle new incoming video image
+        if self.cols == 0:
+            return
         if name in self.blocked:
             return
         if len(img.shape) == 2:
@@ -61,7 +63,7 @@ class VideoSet(object):
                   self.is_bgr[name] = self.is_likely_bgr(img)
                   if not self.is_bgr[name]:
                       print("Setting RGB to BGR conversion for {}".format(name))
-                      print("Use viewer command line options to manage color model conversion settings")
+                      #print("Use viewer command line options to manage color model conversion settings")
               if not self.is_bgr[name]:
                   self.images[name] = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
               else:

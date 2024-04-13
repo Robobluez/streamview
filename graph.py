@@ -289,6 +289,9 @@ class Panels(object):
 
     def update(self, name, message):
 
+        if self.cols == 0:
+            return
+
         if name in self.blocked:
             return
 
