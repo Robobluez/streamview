@@ -115,7 +115,7 @@ if __name__ == "__main__":
    parser.add_argument('-savevideo', help="save viewer data as video file", action='store_true', default=True)
    parser.add_argument('-videopath', help="video output directory", default='FILES')
    parser.add_argument('-fps', help="viewer and video output frame rate", type=int, default=25)
-   parser.add_argument('-videocolormodel', help="video input color subpixel order", default='rgb', choices=['bgr','rgb','auto'])
+   parser.add_argument('-videocolormodel', help="video input color subpixel order", default='rgb', choices=['bgr','rgb'])
    parser.add_argument('-videoscalingfactor', help="input video scaling factor", type=float, default=1)
    parser.add_argument('-gh', '--graphhost', help='graph message source host name or address', default='localhost')
    parser.add_argument('-gp', '--graphport', help='graph data message source port number', type=int, default=5551)

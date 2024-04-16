@@ -113,18 +113,13 @@ class Box(object):
         self.yoffs   = yoffs   # y offset within main canvas
         self.width   = width   # box width
         self.fill    = fill
-        self.label_w = 0
-        self.label_h = 0
         self.fontsize = fontsize
         self.titled  = False
         self.overflow = False
         self.win      = None
  
-        if self.name is not None:
-            (_, self.label_h), _ = cv2.getTextSize("()", 2, self.fontsize, 1) # use fixed text for height so title_margin is not dependent on the actual text
-            (self.label_w, _), _ = cv2.getTextSize(name, 2, self.fontsize, 1) 
-
-        self.title_margin = (self.label_h+4) if (self.label_h > 0)  else 0
+        (_, text_h), _ = cv2.getTextSize("()", 2, self.fontsize, 1) # use fixed text for height so title_margin is not dependent on the actual text
+        self.title_margin = (text_h+4) if (self.name is not None)  else 0
 
         # if height is negative: use if as sbheight, and calculate the resulting height
         # if height is positive: use if as outide height, and calculate the resulting sbheight
@@ -144,15 +139,23 @@ class Box(object):
     def sizeme(self, height):
         self.calc(height, self.topbotmargin, self.sidemargin)
 
-    def print(self, txt, x, y, fonttype, fontsize, color, tocanvas = False):
+    def print(self, txt, x, y, fonttype, fontsize, color, tocanvas = False, rotation = 0):
         assert self.overflow is False
         if tocanvas:
-           cv2.putText(self.canvas, txt, (x + self.sbxoffs(), y + self.sbyoffs()), fonttype, fontsize, color, 1, cv2.LINE_AA)
+           self.print_low(self.canvas, txt, (x + self.sbxoffs(), y + self.sbyoffs()), fonttype, fontsize, color, rotation)
         else:
            if self.win is None and self.canvas is not None and self.sbwidth() > 0 and self.sbheight() > 0:
                self.win = np.full((self.sbheight(), self.sbwidth(), 3), (self.fill, self.fill, self.fill), dtype=np.uint8)
            if self.win is not None:
-              cv2.putText(self.win, txt, (x, y), fonttype, fontsize, color, 1, cv2.LINE_AA)
+              self.print_low(self.win, txt, (x, y), fonttype, fontsize, color, rotation)
+
+    def print_low(self, win, txt, coord, fonttype, fontsize, color, rotation):
+       if rotation:
+          rot = cv2.rotate(win, cv2.ROTATE_90_CLOCKWISE) 
+          cv2.putText(rot, txt, coord, fonttype, fontsize, color, 1, cv2.LINE_AA)
+          win[:,:,:] = cv2.rotate(rot, cv2.ROTATE_90_COUNTERCLOCKWISE)
+       else:
+           cv2.putText(win, txt, coord, fonttype, fontsize, color, 1, cv2.LINE_AA)
 
     def forcewin(self): # force win into existence. needed for windows that don't use box.print 
         self.win = np.full((self.sbheight(), self.sbwidth(), 3), (self.fill, self.fill, self.fill), dtype=np.uint8)
@@ -170,11 +173,11 @@ class Box(object):
     def shrinktext(self):
         shrinkfontsize = self.fontsize
         while True:
-            if self.label_w < self.width:
+            (name_w, _), _ = cv2.getTextSize(self.name, 2, shrinkfontsize, 1) 
+            if name_w < self.width:
                 break
             shrinkfontsize *= 0.98
-            (self.label_w, _), _ = cv2.getTextSize(self.name, 2, shrinkfontsize, 1) 
-        return shrinkfontsize
+        return name_w, shrinkfontsize
 
     def flush(self):
         assert self.overflow is False
@@ -182,8 +185,8 @@ class Box(object):
             self.canvas[self.sbyoffs() : self.sbyoffs() + self.win.shape[0], self.sbxoffs() : self.sbxoffs() + self.win.shape[1]] = self.win
         if self.canvas is not None:
            if not self.titled and self.title_margin > 0: # put title at top, horizontally centered
-               cv2.putText(self.canvas, self.name, (self.xoffs + max(0, int(self.width/2 - self.label_w/2)),
-                   self.sbyoffs() - 3), 2, self.shrinktext(), 0, 1, cv2.LINE_AA)
+               name_w, shrinkfontsize = self.shrinktext()
+               cv2.putText(self.canvas, self.name, (self.xoffs + max(0, int(self.width/2 - name_w/2)), self.sbyoffs() - 3), 2, shrinkfontsize, 0, 1, cv2.LINE_AA)
                self.titled = True
            if self.topbotmargin > 0:
                self.canvas[self.yoffs,              self.xoffs:self.xoffs+self.width-1] = (200,200,200)

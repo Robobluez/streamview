@@ -81,8 +81,8 @@ if __name__ == '__main__':
 
     graphs = {
         "twin scales I" : (
-            {}, {"sin" : "math.sin(math.radians(idx))" , "cos" : "math.cos(math.radians(idx))" }, 
-            {"min" : -2, "max" : 2} , {"sin*2" : "2*math.sin(math.radians(idx+10))" , "cos*2" : "2*math.cos(math.radians(idx+20))" },
+            {"label" : "sin(x)"}, {"sin" : "math.sin(math.radians(idx))" }, 
+            {"label" : "cos(x)", "min" : -1, "max" : 1} , {"cos" : "math.cos(math.radians(idx))" },
             {}),
         "twin scales II" : (
             {} , {"sin" : "math.sin(math.radians(idx))" , "cos" : "math.cos(math.radians(idx))" },

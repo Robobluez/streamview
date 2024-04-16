@@ -38,15 +38,6 @@ class VideoSet(object):
         self.videocolormodel = videocolormodel
         self.redrawn = False # used by streamer - if videos are redrawn, graphs need to be redrawn as well 
 
-    def is_likely_bgr(self, frame):
-        r, g, b = cv2.split(frame)
-
-        r_mean, r_std = cv2.meanStdDev(r)
-        b_mean, b_std = cv2.meanStdDev(b)
-
-        if b_mean > r_mean and b_std > r_std:
-            return True  # Likely BGR
-
     ############################################################################
     # handle new incoming video image
     ############################################################################
@@ -58,17 +49,7 @@ class VideoSet(object):
         if len(img.shape) == 2:
            self.images[name] = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
         if len(img.shape) == 3:
-           if self.videocolormodel == 'auto':
-              if not name in self.is_bgr:
-                  self.is_bgr[name] = self.is_likely_bgr(img)
-                  if not self.is_bgr[name]:
-                      print("Setting RGB to BGR conversion for {}".format(name))
-                      #print("Use viewer command line options to manage color model conversion settings")
-              if not self.is_bgr[name]:
-                  self.images[name] = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-              else:
-                  self.images[name] = img
-           elif self.videocolormodel == 'rgb':
+           if self.videocolormodel == 'rgb':
                self.images[name] = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
            else:
                self.images[name] = img

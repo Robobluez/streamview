@@ -27,7 +27,7 @@ while True:
         {    \
              "minimal graph" :   # graph name
             (
-                { "min" : -1, "max" : 1}, # left scale range
+                { "label" : "sin(x)", "min" : -1, "max" : 1}, # left scale range
                 { "sin" : math.sin(math.radians(idx)) }, # single left side var
                 {}, # no right scale range
                 {}, # no right scale vars

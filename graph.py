@@ -9,17 +9,19 @@ import util
 # Left or right side panel with y-axis values 
 ############################################################################
 class Scale(object):
-    def __init__(self, scaledef, box, fontsize = 0.3, fonttype = 2):
+    def __init__(self, scaledef, box, pos, fontsize = 0.3, fonttype = 2):
         self.scaledef = scaledef
         self.box      = box
         self.fontsize = fontsize
         self.fonttype = fonttype
+        self.pos      = pos # position: 0 is left, 1 is right
         self.idx      = 0
         
         (label_width, self.label_height), baseline = cv2.getTextSize("0123456789", self.fonttype, self.fontsize, 1)
 
         self.minv = min(self.scaledef.get('min', -1), self.scaledef.get('max', 1))
         self.maxv = max(self.scaledef.get('max', 1), self.scaledef.get('max', 1))
+        self.label = self.scaledef.get('label', "")
 
         self.labelvals = self.autolabels()
         self.labelstepcnt = len(self.labelvals)-1
@@ -34,15 +36,24 @@ class Scale(object):
 
     def gridmargin(self):
         return int(self.label_height)
+
     def gridheight(self):
         return int(self.box.sbheight() - 2 * self.gridmargin())
 
     def initscale(self):
+        # print rotated scale label
+        (label_width, label_height), baseline = cv2.getTextSize(self.label, self.fonttype, 1.3 * self.fontsize, 1)
+        offs_x = max(0, int(self.box.sbheight()/2 - label_width/2))
+        offs_y = label_height if self.pos == 0 else self.box.sbwidth() - 2 # - label_height
+        self.box.print(self.label, offs_x, offs_y, self.fonttype, 1.3 * self.fontsize, (120,120,120), rotation = 90) # clockwise 
+
+        # now, print scale values
         for i, label in zip(self.steppix, self.labelvals):
            (label_width, label_height), baseline = cv2.getTextSize(label, self.fonttype, self.fontsize, 1)
-           offs_x = max(0, self.box.sbwidth() - label_width)
+           offs_x = 2 if self.pos == 1 else max(0, self.box.sbwidth()- label_width - 2)
            offs_y = self.box.sbheight() - i + int(label_height/2) 
-           self.box.print(label, offs_x, offs_y, self.fonttype, self.fontsize, 0)
+           self.box.print(label, offs_x, offs_y, self.fonttype, self.fontsize, (120,120,120))
+           self.box.win[:,-1 if self.pos == 0 else 0] = 120
 
     def autolabels(self):  
         labcntprefs = np.array([1, 2, 3, 5, 10, 20])
@@ -245,17 +256,16 @@ class Panel(object):
         self.canvas = canvas
         self.leftscalewidth = scalewidth # if bool(ldef) is not False else 0 # updated - let's always have left scale
         self.rightscalewidth = scalewidth # if bool(rdef) is not False else 0 # updated - let's always have right scale
-        self.leftscale = Scale(ldef, self.leftscalebox(box))
-        self.rightscale = Scale(rdef, self.rightscalebox(box))
+        self.leftscale = Scale(ldef, self.leftscalebox(box), pos = 0)
+        self.rightscale = Scale(rdef, self.rightscalebox(box), pos = 1)
         self.graph = Graph(name, self.leftscale, self.rightscale, self.graphbox(box))
 
     def leftscalebox(self, box):
-        return util.Box(self.canvas, None, box.sbxoffs(), box.sbyoffs(), self.leftscalewidth, box.sbheight(),
-            topbotmargin = 1, fill = 200)
+        return util.Box(self.canvas, None, box.sbxoffs(), box.sbyoffs(), self.leftscalewidth, box.sbheight(), topbotmargin = 1, fill = 255) # 200)
 
     def rightscalebox(self, box):
         return util.Box(self.canvas, None, box.sbxoffs() + box.sbwidth() - self.rightscalewidth,
-            box.sbyoffs(),self.rightscalewidth, box.sbheight(), topbotmargin = 1, fill = 200)
+            box.sbyoffs(),self.rightscalewidth, box.sbheight(), topbotmargin = 1, fill = 255) # 200)
 
     def graphbox(self, box):
         return util.Box(self.canvas, None, box.sbxoffs() + self.leftscale.box.width, box.sbyoffs(),
