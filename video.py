@@ -24,7 +24,7 @@ class Video(object):
 ############################################################################
 class VideoSet(object):
 
-    def __init__(self, canvas, box, cols = 3, hspacer = 2, vspacer = 2, videocolormodel = 'rgb'):
+    def __init__(self, canvas, box, cols = 3, videocolormodel = 'rgb'):
         self.canvas = canvas
         self.box = box
         self.cols = cols
@@ -33,8 +33,6 @@ class VideoSet(object):
         self.images = {}
         self.is_bgr = {}
         self.blocked = {}
-        self.hspacer = hspacer
-        self.vspacer = vspacer
         self.videocolormodel = videocolormodel
         self.redrawn = False # used by streamer - if videos are redrawn, graphs need to be redrawn as well 
 
@@ -50,6 +48,7 @@ class VideoSet(object):
            self.images[name] = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
         if len(img.shape) == 3:
            if self.videocolormodel == 'rgb':
+               #print("rgb2brg")
                self.images[name] = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
            else:
                self.images[name] = img
@@ -88,21 +87,20 @@ class VideoSet(object):
         for row in range(0, self.rows):
             imgheight = max([self.images[videonames[i]].shape[0]
                 for i in range(row * self.cols , min(len(videonames), (row+1) * self.cols))])
-            rowbox = util.Box(None, "", self.box.sbxoffs(), self.box.sbyoffs() + height, self.box.sbwidth(), -1 * imgheight, # negative height : let box add the title height
-                topbotmargin = 3, sidemargin = 3)
-            w = math.floor(self.box.sbwidth()/self.cols) - self.hspacer
+            rowbox = util.Box(None, "", self.box.sbxoffs(), self.box.sbyoffs() + height, self.box.sbwidth(), -1 * imgheight, border = True) # negative height : let box add the title height
+            w = math.floor(self.box.sbwidth()/self.cols)
             h = rowbox.height
             for col in range(0, self.cols):
                 idx = row * self.cols + col % self.cols
                 if idx < len(videonames):
                    name = videonames[idx]
                    img = self.images[name]
-                   box = util.Box(self.canvas, name, self.box.sbxoffs() + col * w + math.floor(self.hspacer/2) + (col*self.hspacer) , self.box.sbyoffs() + height, w, h,
-                       topbotmargin = math.floor((h - rowbox.title_margin - img.shape[0])/2), sidemargin = math.floor((w - img.shape[1])/2))
+                   box = util.Box(self.canvas, name, self.box.sbxoffs() + col * w, self.box.sbyoffs() + height, w, h,
+                       topbotmargin = math.floor((rowbox.sbheight() - img.shape[0])/2), sidemargin = math.floor((w - img.shape[1])/2), border = True)
                    if box.overflow is True:
                        self.overflow = True
                    newvideos[name] = Video(name, self.canvas, box)
-            height += (rowbox.height + self.vspacer)
+            height += rowbox.height
         return height
 
     def count(self):

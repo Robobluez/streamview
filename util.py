@@ -30,7 +30,7 @@ class Colors(object):
         self.color_d = { # https://wamingo.net/rgbbgr/ , https://www.rapidtables.com/web/color/RGB_Color.html
             'Red': (0, 0, 255),
             'Orange': (0, 165, 255),
-            'Lead': (32, 32, 32),
+            'Lead': (64, 64, 64),
             'Ultimate pink': (255, 86, 255),
             'Waystone green': (0, 192, 0),
             'Navy blue': (128, 0, 0) }
@@ -105,7 +105,7 @@ class KBHit:
 # Box coordinate & margin handling
 ############################################################################
 class Box(object):
-    def __init__(self, canvas, name, xoffs, yoffs, width, height, topbotmargin = 0, sidemargin = 0, fill = 255, fontsize = 0.4):
+    def __init__(self, canvas, name, xoffs, yoffs, width, height, topbotmargin = 0, sidemargin = 0, fill = 255, fontsize = 0.4, border = False):
 
         self.canvas  = canvas
         self.name    = name
@@ -117,6 +117,11 @@ class Box(object):
         self.titled  = False
         self.overflow = False
         self.win      = None
+        self.border   = border
+ 
+        if border:
+            topbotmargin += 3
+            sidemargin += 3
  
         (_, text_h), _ = cv2.getTextSize("()", 2, self.fontsize, 1) # use fixed text for height so title_margin is not dependent on the actual text
         self.title_margin = (text_h+4) if (self.name is not None)  else 0
@@ -186,14 +191,26 @@ class Box(object):
         if self.canvas is not None:
            if not self.titled and self.title_margin > 0: # put title at top, horizontally centered
                name_w, shrinkfontsize = self.shrinktext()
-               cv2.putText(self.canvas, self.name, (self.xoffs + max(0, int(self.width/2 - name_w/2)), self.sbyoffs() - 3), 2, shrinkfontsize, 0, 1, cv2.LINE_AA)
+               cv2.putText(self.canvas, self.name, (self.xoffs + max(0, int(self.width/2 - name_w/2)), self.sbyoffs() - 3), 2, shrinkfontsize, (120,120,120), 1, cv2.LINE_AA)
                self.titled = True
-           if self.topbotmargin > 0:
-               self.canvas[self.yoffs,              self.xoffs:self.xoffs+self.width-1] = (200,200,200)
-               self.canvas[self.yoffs+self.height-1,self.xoffs:self.xoffs+self.width-1] = (200,200,200)
-           if self.sidemargin > 0:
-               self.canvas[self.yoffs: self.yoffs+self.height-1,self.xoffs] = (200,200,200)
-               self.canvas[self.yoffs: self.yoffs+self.height-1,self.xoffs + self.width-1] = (200,200,200)
+           # grid lines
+        if self.border and self.canvas is not None:
+           assert self.topbotmargin > 0 
+           assert self.sidemargin > 0
+
+           #print("xoffs", self.xoffs, "yoffs", self.yoffs, "width", self.width, "height", self.height)
+
+           #print(1+self.yoffs,                    1+self.xoffs, "-", -1+self.xoffs+self.width)
+           self.canvas[1+self.yoffs,              1+self.xoffs:-1+self.xoffs+self.width] = (200,200,200)
+
+           #print(-1+self.yoffs+self.height-1,       1+self.xoffs, "-", -1+self.xoffs+self.width)
+           self.canvas[-1+self.yoffs+self.height-1,1+self.xoffs:-1+self.xoffs+self.width] = (200,200,200)
+
+           #print(1+self.yoffs, "-",  1+self.yoffs+self.height,1+self.xoffs)
+           self.canvas[1+self.yoffs: 1+self.yoffs+self.height,1+self.xoffs] = (200,200,200)
+
+           #print(      -1+self.yoffs, "-",   -1+self.yoffs+self.height,-1+self.xoffs + self.width-1)
+           self.canvas[1+self.yoffs: -1+self.yoffs+self.height,-1+self.xoffs + self.width-1] = (200,200,200)
 
     def sbyoffs(self): 
         return self.yoffs + self.topbotmargin + self.title_margin

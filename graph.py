@@ -160,8 +160,8 @@ class Graph(object):
        for (k, v) in {**self.datavars}.values():
            if (height + offs_y) >= self.box.sbheight(): # don't paint outside the box
                break
-           self.box.print(k, 2, offs_y, self.fonttype, self.dfontsize, self.color.scale(), tocanvas = True)
-           self.box.print("= {}".format(v), 5 + width, offs_y, self.fonttype, self.dfontsize, self.color.scale(), tocanvas = True)
+           self.box.print(k, 2, offs_y, self.fonttype, self.dfontsize, (120,120,120), tocanvas = True)
+           self.box.print("= {}".format(v), 5 + width, offs_y, self.fonttype, self.dfontsize, (120,120,120), tocanvas = True)
            offs_y += int(1.6 * height)
 
     def draw_xtime(self):
@@ -175,7 +175,7 @@ class Graph(object):
            if self.basepix == 0:
                label = "{:d}:{:d}:{:02d}".format(lapsed // 3600, lapsed // 60, lapsed % 60) if lapsed > 3600 else "{:d}:{:02d}".format(lapsed // 60, lapsed % 60)
                (label_width, label_height), baseline = cv2.getTextSize(label, self.fonttype, 0.3, 1)
-               self.box.print(label, self.box.sbwidth() - label_width, self.box.sbheight() - 2, self.fonttype, 0.3, self.color.scale())
+               self.box.print(label, self.box.sbwidth() - label_width, self.box.sbheight() - 2, self.fonttype, 0.3, (120,120,120))
                self.basepix = int(label_width * 1.4)
 
     def gupdate(self, msg, scale, vars): 
@@ -261,11 +261,11 @@ class Panel(object):
         self.graph = Graph(name, self.leftscale, self.rightscale, self.graphbox(box))
 
     def leftscalebox(self, box):
-        return util.Box(self.canvas, None, box.sbxoffs(), box.sbyoffs(), self.leftscalewidth, box.sbheight(), topbotmargin = 1, fill = 255) # 200)
+        return util.Box(self.canvas, None, box.sbxoffs(), box.sbyoffs(), self.leftscalewidth, box.sbheight(), topbotmargin = 1, fill = 240) # 200)
 
     def rightscalebox(self, box):
         return util.Box(self.canvas, None, box.sbxoffs() + box.sbwidth() - self.rightscalewidth,
-            box.sbyoffs(),self.rightscalewidth, box.sbheight(), topbotmargin = 1, fill = 255) # 200)
+            box.sbyoffs(),self.rightscalewidth, box.sbheight(), topbotmargin = 1, fill = 240) # 200)
 
     def graphbox(self, box):
         return util.Box(self.canvas, None, box.sbxoffs() + self.leftscale.box.width, box.sbyoffs(),
@@ -284,7 +284,7 @@ class Panel(object):
 ############################################################################
 class Panels(object):
 
-    def __init__(self, canvas, box, cols = 2, hspacer = 2, vspacer = 0, minrowheight = 64):
+    def __init__(self, canvas, box, cols = 2, minrowheight = 64):
         self.box    = box
         self.canvas = canvas
         self.panels = {}
@@ -292,8 +292,6 @@ class Panels(object):
         self.rdefs = {}
         self.cols  = cols
         self.rows  = 0
-        self.hspacer = hspacer
-        self.vspacer = vspacer
         self.blocked = {}
         self.minrowheight = minrowheight
 
@@ -336,14 +334,13 @@ class Panels(object):
         for row in range(0, self.rows):
             rowbox = util.Box(None, None, self.box.sbxoffs(), self.box.sbyoffs() + row * panelheight, self.box.sbwidth(), panelheight,
             topbotmargin = 0, sidemargin = 0)
-            w = math.floor(rowbox.sbwidth()/self.cols) - self.hspacer
+            w = math.floor(rowbox.sbwidth()/self.cols)
             h = rowbox.sbheight()
             for col in range(0, self.cols):
                 idx = row * self.cols + col % self.cols
                 if idx < len(panelnames):
                    name = panelnames[idx]
-                   box = util.Box(self.canvas, name, rowbox.sbxoffs() + col * w + math.floor(self.hspacer/2) + (col*self.hspacer), rowbox.sbyoffs(), w, h,
-                       topbotmargin = 0, sidemargin = 2)
+                   box = util.Box(self.canvas, name, rowbox.sbxoffs() + col * w, rowbox.sbyoffs(), w, h, border = True)
                    self.panels[name] = Panel(name, self.canvas, self.ldefs[name], self.rdefs[name], box)
 
     def count(self): 

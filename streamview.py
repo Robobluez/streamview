@@ -14,15 +14,17 @@ import util
 
 import argparse
 
+import pickle
+
 ############################################################################
 # Streamview main class - manages inputs, videos, graphs, video creation 
 ############################################################################
 class Streamview(object):
 
-    def __init__(self, kb, leadertxt, image_msg, graph_msg, canvas_h, canvas_w, fps, savevideo,
-        videopath, videocolormodel, videoscalingfactor, graphcols, videocols):
+    def __init__(self, kb, introtxt, image_msg, graph_msg, canvas_h, canvas_w, fps, savevideo,
+        videopath, videocolormodel, videoscalingfactor, graphcols, videocols, pickleoutputfile):
 
-       self.leadertxt     = leadertxt
+       self.introtxt      = introtxt
        self.kb            = kb
        self.fps           = fps
        self.image_msg     = image_msg
@@ -36,6 +38,7 @@ class Streamview(object):
        self.videohandle   = None
        self.basetime      = None
        self.lastsnapped   = 0
+       self.pickleoutputfile = pickleoutputfile
            
        self.canvas = np.full((canvas_h, canvas_w, 3), (255,255,255), dtype=np.uint8)
        self.box = util.Box(self.canvas, None, 0, 0, canvas_w, canvas_h)
@@ -45,7 +48,7 @@ class Streamview(object):
        self.dbox = util.Box(self.canvas, None, self.box.sbxoffs(), self.box.sbyoffs(), self.box.sbwidth(), self.box.sbheight())
        self.panels = graph.Panels(self.canvas, self.dbox, cols=graphcols)
 
-       self.leader()
+       self.intro()
 
        if self.savevideo:
            if not os.path.exists("./{}".format(self.videopath)):
@@ -53,9 +56,9 @@ class Streamview(object):
            self.videohandle = cv2.VideoWriter("{}/video-{}-{}.mp4".format(self.videopath, time.strftime("%Y%m%d"),
                 time.strftime("%H%M")), cv2.VideoWriter_fourcc(*'mp4v'), float(fps), (self.canvas.shape[1], self.canvas.shape[0]))
 
-    def leader(self, fontsize = 0.8, fonttype = 2):
-        (label_width, label_height), baseline = cv2.getTextSize(self.leadertxt, fonttype, fontsize, 1)
-        self.box.print(self.leadertxt, int(0.5 * self.box.sbwidth()) - int(0.5 * label_width), int(0.5 * self.box.sbheight()),
+    def intro(self, fontsize = 0.8, fonttype = 2):
+        (label_width, label_height), baseline = cv2.getTextSize(self.introtxt, fonttype, fontsize, 1)
+        self.box.print(self.introtxt, int(0.5 * self.box.sbwidth()) - int(0.5 * label_width), int(0.5 * self.box.sbheight()),
             fonttype, fontsize, color = 0, tocanvas = True)
   
     def __del__(self): # destructor - needed to release video handle & flush video
@@ -81,17 +84,25 @@ class Streamview(object):
     ##########################################################################
     # main loop
     ##########################################################################
-    def run(self):
+    def run(self, gidx = 0, vidx = 0):
+
+      pf = open("{}{}".format(self.pickleoutputfile, ".dat"), "wb") if self.pickleoutputfile is not None else None
 
       while not self.kb.quit():
   
          graph_msg = self.graph_msg.read() # check for data message
          if graph_msg is not None:
+            gidx += 1
+            if pf is not None:
+                pickle.dump((args.graphport, time.time(), graph_msg), pf)
             for name in graph_msg.keys(): 
                self.panels.update(name, graph_msg[name])
 
          image_msg = self.image_msg.read()  # check for image message
          if image_msg is not None:
+            vidx += 1
+            if pf is not None:
+                pickle.dump((args.videoport, time.time(), image_msg), pf)
             for name, image in image_msg.items():
                if self.scale != 1:  
                   image = cv2.resize(image, (round(self.scale * image.shape[1]), round(self.scale * image.shape[0])), interpolation = cv2.INTER_AREA if self.scale < 1 else cv2.INTER_LINEAR)
@@ -101,6 +112,8 @@ class Streamview(object):
                   self.dbox = util.Box(self.canvas, None, self.box.sbxoffs(), self.box.sbyoffs()+isize, self.box.sbwidth(), self.box.sbheight() - isize)
                   self.panels = graph.Panels(self.canvas, self.dbox, cols=self.graphcols)
                   self.redrawn = False
+
+         print("\rgraph frames: {:6d}, video frames {:6d}".format(gidx, vidx), end="", flush=True)
 
          self.snap()
    
@@ -114,15 +127,16 @@ if __name__ == "__main__":
    parser.add_argument('-height', help="viewer window pixel height", default=680, type=int)
    parser.add_argument('-savevideo', help="save viewer data as video file", action='store_true', default=True)
    parser.add_argument('-videopath', help="video output directory", default='FILES')
-   parser.add_argument('-fps', help="viewer and video output frame rate", type=int, default=25)
+   parser.add_argument('-fps', help="viewer and video output frame rate", type=int, default=15)
    parser.add_argument('-videocolormodel', help="video input color subpixel order", default='rgb', choices=['bgr','rgb'])
    parser.add_argument('-videoscalingfactor', help="input video scaling factor", type=float, default=1)
-   parser.add_argument('-gh', '--graphhost', help='graph message source host name or address', default='localhost')
+   parser.add_argument('-mh', '--messagehost', help='message source host name or address', default='localhost')
    parser.add_argument('-gp', '--graphport', help='graph data message source port number', type=int, default=5551)
-   parser.add_argument('-vh', '--videohost', help='video source host name or address', default='localhost')
    parser.add_argument('-vp', '--videoport', help='video source port number', type=int, default=5550)
    parser.add_argument('-gc', '--graphcols', help='number of graph columns', default=1, type=int, choices=range(0, 6))
    parser.add_argument('-vc', '--videocols', help='number of video columns', default=2, type=int, choices=range(0, 6))
+   parser.add_argument('-po', '--pickleoutputfile', help="pickle stream messages output file")
+
 
    args = parser.parse_args()
 
@@ -139,15 +153,15 @@ if __name__ == "__main__":
 
    # conflate=true: let new incoming video images overwrite any unprocessed messades in queue. in case we cannot keep up
 
-   image_msg = util.iMsg(zmq.Context(), args.videoport, host=args.videohost, conflate = True) # dict: name : image
+   image_msg = util.iMsg(zmq.Context(), args.videoport, host=args.messagehost, conflate = True) # dict: name : image
 
    # conflate=false: let incoming data messages queue up. only relevant when imdisplay is being resized and queue processing is suspended.
    #    in all other cases we have no issue keeping up
 
-   graph_msg = util.iMsg(zmq.Context(), args.graphport, host=args.graphhost, conflate = False) # dict arrray: [ name : tuple ]
+   graph_msg = util.iMsg(zmq.Context(), args.graphport, host=args.messagehost, conflate = False) # dict arrray: [ name : tuple ]
 
    Streamview(util.KBHit(),
-        leadertxt    = "Waiting for streaming data ..",
+        introtxt    = "Waiting for streaming data ..",
         image_msg    = image_msg,
         graph_msg    = graph_msg,
         fps          = args.fps,
@@ -158,4 +172,5 @@ if __name__ == "__main__":
         videocolormodel= args.videocolormodel,
         videoscalingfactor= args.videoscalingfactor,
         graphcols    = args.graphcols,
-        videocols    = args.videocols).run()
+        videocols    = args.videocols,
+        pickleoutputfile   = args.pickleoutputfile).run()
