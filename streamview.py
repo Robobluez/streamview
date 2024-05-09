@@ -130,13 +130,12 @@ if __name__ == "__main__":
    parser.add_argument('-fps', help="viewer and video output frame rate", type=int, default=15)
    parser.add_argument('-videocolormodel', help="video input color subpixel order", default='rgb', choices=['bgr','rgb'])
    parser.add_argument('-videoscalingfactor', help="input video scaling factor", type=float, default=1)
-   parser.add_argument('-mh', '--messagehost', help='message source host name or address', default='localhost')
+   parser.add_argument('-hn', '--hostname', help='(streaming) data host name or address', default='localhost')
    parser.add_argument('-gp', '--graphport', help='graph data message source port number', type=int, default=5551)
    parser.add_argument('-vp', '--videoport', help='video source port number', type=int, default=5550)
    parser.add_argument('-gc', '--graphcols', help='number of graph columns', default=1, type=int, choices=range(0, 6))
    parser.add_argument('-vc', '--videocols', help='number of video columns', default=2, type=int, choices=range(0, 6))
    parser.add_argument('-po', '--pickleoutputfile', help="pickle stream messages output file")
-
 
    args = parser.parse_args()
 
@@ -153,12 +152,12 @@ if __name__ == "__main__":
 
    # conflate=true: let new incoming video images overwrite any unprocessed messades in queue. in case we cannot keep up
 
-   image_msg = util.iMsg(zmq.Context(), args.videoport, host=args.messagehost, conflate = True) # dict: name : image
+   image_msg = util.iMsg(zmq.Context(), args.videoport, host=args.hostname, conflate = True) # dict: name : image
 
    # conflate=false: let incoming data messages queue up. only relevant when imdisplay is being resized and queue processing is suspended.
    #    in all other cases we have no issue keeping up
 
-   graph_msg = util.iMsg(zmq.Context(), args.graphport, host=args.messagehost, conflate = False) # dict arrray: [ name : tuple ]
+   graph_msg = util.iMsg(zmq.Context(), args.graphport, host=args.hostname, conflate = False) # dict arrray: [ name : tuple ]
 
    Streamview(util.KBHit(),
         introtxt    = "Waiting for streaming data ..",
