@@ -21,7 +21,7 @@ class Scale(object):
 
         self.minv = min(self.scaledef.get('min', -1), self.scaledef.get('max', 1))
         self.maxv = max(self.scaledef.get('max', 1), self.scaledef.get('max', 1))
-        if self.inv == self.maxv:
+        if self.minv == self.maxv:
            self.minv = -1
            self.maxv = 1
         self.label = self.scaledef.get('label', "")
