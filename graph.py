@@ -21,6 +21,9 @@ class Scale(object):
 
         self.minv = min(self.scaledef.get('min', -1), self.scaledef.get('max', 1))
         self.maxv = max(self.scaledef.get('max', 1), self.scaledef.get('max', 1))
+        if self.inv == self.maxv:
+           self.minv = -1
+           self.maxv = 1
         self.label = self.scaledef.get('label', "")
 
         self.labelvals = self.autolabels()
@@ -194,7 +197,7 @@ class Graph(object):
 
     def dupdate(self, msg):
         for (k, v)  in msg.items():
-           self.datavars[k] = (k, "{: .2f}".format(v)) # set ( and format ) data var value
+           self.datavars[k] = (k, "{: .3f}".format(v)) # set ( and format ) data var value
 
     def rollgraph(self): # use np.roll for efficient graph updates
         self.box.win = np.roll(self.box.win, -1, axis=1)

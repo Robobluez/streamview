@@ -127,7 +127,7 @@ if __name__ == "__main__":
    parser.add_argument('-height', help="viewer window pixel height", default=680, type=int)
    parser.add_argument('-savevideo', help="save viewer data as video file", action='store_true', default=True)
    parser.add_argument('-videopath', help="video output directory", default='FILES')
-   parser.add_argument('-fps', help="viewer and video output frame rate", type=int, default=15)
+   parser.add_argument('-fps', help="viewer and video output frame rate", type=int, default=25)
    parser.add_argument('-videocolormodel', help="video input color subpixel order", default='rgb', choices=['bgr','rgb'])
    parser.add_argument('-videoscalingfactor', help="input video scaling factor", type=float, default=1)
    parser.add_argument('-hn', '--hostname', help='(streaming) data host name or address', default='localhost')
