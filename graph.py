@@ -246,7 +246,8 @@ class GraphVar(object):
            vn = self.num_to_range(v, self.minv, self.maxv, self.gridheight, 0) + self.gridmargin
            pn = self.prev_vlist[i]
            if self.prev_vlist[i] is not None:
-               roller[min(vn, pn): max(vn, pn)+1, -1] = self.color # smoothen graph by connecting prev and current value
+               #roller[min(vn, pn): max(vn, pn)+1, -1] = self.color # smoothen graph by connecting prev and current value
+               roller[min(vn, pn): max(vn, pn)+1 + (1 if (min(vn, pn)== max(vn, pn)) else 0) , -2:-1] = self.color # smoothen graph by connecting prev and current value
            self.prev_vlist[i] = vn
 
 ############################################################################
